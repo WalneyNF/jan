@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build-windows:
-    runs-on: windows-2025
+    runs-on: windows-2022
     timeout-minutes: 180
     env:
       JAN_ENGINE_VARIANT: cpu
@@ -31,6 +31,8 @@ jobs:
           Add-Content $env:GITHUB_PATH 'C:\Program Files\CMake\bin'
           Add-Content $env:GITHUB_PATH 'C:\Program Files\Git\bin'
           Add-Content $env:GITHUB_PATH 'C:\Program Files\Git\usr\bin'
+      # VS 2022 STL accepts the LLVM/Clang toolchain provisioned above.
+      # The previous windows-2025 runner selected VS 2026 STL and rejected Clang 20 (STL1000).
       - name: Node.js 20
         uses: actions/setup-node@v4
         with:
