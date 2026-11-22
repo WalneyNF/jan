@@ -1,0 +1,64 @@
+name: WMK Jan - Windows 10 diagnostic build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    env:
+      JAN_ENGINE_VARIANT: cpu
+      JAN_ENGINE_REQUIRE_SIGNING: "0"
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+      - name: Install build tools
+        shell: pwsh
+        run: |
+          choco install make llvm ninja cmake -y --no-progress
+          Add-Content $env:GITHUB_PATH 'C:\ProgramData\chocolatey\bin'
+          Add-Content $env:GITHUB_PATH 'C:\Program Files\LLVM\bin'
+          Add-Content $env:GITHUB_PATH 'C:\Program Files\CMake\bin'
+          Add-Content $env:GITHUB_PATH 'C:\Program Files\Git\bin'
+          Add-Content $env:GITHUB_PATH 'C:\Program Files\Git\usr\bin'
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Yarn 4
+        shell: pwsh
+        run: |
+          corepack enable
+          corepack prepare yarn@4.5.3 --activate
+      - name: Prepare Windows bundle without vendor signing
+        shell: pwsh
+        run: |
+          $p='src-tauri/tauri.windows.conf.json'
+          $j=Get-Content $p -Raw | ConvertFrom-Json
+          $j.bundle.targets=@('nsis')
+          if ($j.bundle.windows.PSObject.Properties.Name -contains 'signCommand') { $j.bundle.windows.PSObject.Properties.Remove('signCommand') }
+          $j | ConvertTo-Json -Depth 40 | Set-Content $p -Encoding utf8
+      - name: Build Jan with CPU engine
+        shell: bash
+        run: make build JAN_ENGINE_VARIANT=cpu
+      - name: Upload Windows installer
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WMK-Jan-Windows10-diagnostic-unsigned
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+      - name: Save diagnostic engine build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WMK-Jan-Windows10-build-logs
+          path: src-tauri/target/engine-build.log
+          if-no-files-found: ignore
