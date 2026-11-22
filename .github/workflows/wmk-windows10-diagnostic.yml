@@ -2,6 +2,11 @@ name: WMK Jan - Windows 10 diagnostic build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src-tauri/tauri.windows.conf.json'
+      - '.github/workflows/wmk-windows10-diagnostic.yml'
 
 permissions:
   contents: read
