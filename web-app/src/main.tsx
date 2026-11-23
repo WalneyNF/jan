@@ -107,4 +107,26 @@ const boot = async () => {
   }
 }
 
-boot().catch((e) => console.error('Failed to boot app:', e))
+// Make startup failures visible even when the application router never mounts.
+// This is intentionally plain DOM: it must not depend on React, i18n or a store.
+const showStartupFailure = (error: unknown) => {
+  const message = error instanceof Error ? (error.stack || error.message) : String(error)
+  console.error('[WMK Jan startup]', error)
+  const root = document.getElementById('root') || document.body
+  if (document.getElementById('wmk-startup-failure')) return
+  const panel = document.createElement('pre')
+  panel.id = 'wmk-startup-failure'
+  panel.setAttribute('role', 'alert')
+  panel.style.cssText = 'box-sizing:border-box;position:fixed;inset:12px;z-index:2147483647;padding:20px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#15191f;color:#fff;font:14px/1.6 Consolas,monospace;border:2px solid #ff6b6b;border-radius:8px'
+  panel.textContent = 'WMK Jan - erro ao iniciar a interface\\n\\n' + message + '\\n\\nCopie esta mensagem ao relatar o problema.'
+  root.appendChild(panel)
+}
+
+window.addEventListener('error', (event) => {
+  if (event.error) showStartupFailure(event.error)
+})
+window.addEventListener('unhandledrejection', (event) => {
+  showStartupFailure(event.reason)
+})
+
+boot().catch(showStartupFailure)
