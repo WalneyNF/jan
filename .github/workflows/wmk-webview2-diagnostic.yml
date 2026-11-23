@@ -1,0 +1,33 @@
+name: WMK WebView2 - teste independente
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/webview2-diagnostic/**'
+      - '.github/workflows/wmk-webview2-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Compilar diagnostico x64 autonomo
+        shell: pwsh
+        run: |
+          dotnet publish tools/webview2-diagnostic/WMK-WebView2-Diagnostico.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=false -o dist/webview2
+      - name: Publicar programa de diagnostico
+        uses: actions/upload-artifact@v4
+        with:
+          name: WMK-WebView2-Diagnostico-Windows-x64
+          path: dist/webview2/*
+          if-no-files-found: error
