@@ -670,6 +670,19 @@ pub fn run() {
     // Handle app lifecycle events
     app.run(|app, event| {
         use std::sync::atomic::Ordering;
+        // Diagnostic lifecycle logging for Windows reports where the window
+        // flashes and disappears while Jan-Desktop.exe keeps running.
+        #[cfg(target_os = "windows")]
+        if let RunEvent::WindowEvent { label, event, .. } = &event {
+            if label == "main" {
+                match event {
+                    tauri::WindowEvent::CloseRequested { .. } => log::warn!("WMK startup: main window CloseRequested"),
+                    tauri::WindowEvent::Destroyed => log::warn!("WMK startup: main window Destroyed"),
+                    tauri::WindowEvent::Focused(value) => log::info!("WMK startup: main window focus={value}"),
+                    _ => {}
+                }
+            }
+        }
         if let RunEvent::WindowEvent {
             event: tauri::WindowEvent::CloseRequested { api, .. },
             label,

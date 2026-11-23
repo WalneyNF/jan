@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'src-tauri/tauri.windows.conf.json'
+      - 'src-tauri/src/lib.rs'
+      - 'web-app/src/main.tsx'
       - '.github/workflows/wmk-windows10-diagnostic.yml'
 
 permissions:
